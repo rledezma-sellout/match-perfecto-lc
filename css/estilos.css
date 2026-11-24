@@ -1,0 +1,205 @@
+/* =========================================================
+   FUENTES
+   Para usar las fuentes finales, copia los archivos en /fonts
+   y descomenta/ajusta los @font-face. Luego cambia las variables.
+   ========================================================= */
+@font-face {
+  font-family: "Hanley Pro Sans";
+  src: url("../fonts/Hanley-Pro-Sans.otf") format("opentype");
+  font-display: block;
+}
+/*
+@font-face { font-family: "FuenteScript"; src: url("../fonts/script.woff2") format("woff2"); }
+@font-face { font-family: "FuenteTitulo"; src: url("../fonts/titulo.woff2") format("woff2"); }
+@font-face { font-family: "FuenteTexto";  src: url("../fonts/texto.woff2")  format("woff2"); }
+*/
+
+:root {
+  /* Colores */
+  --color-fondo: #000000;
+  --color-texto: #ffffff;
+  --color-acento: #f5a612;      /* amarillo/naranjo de marca */
+  --color-boton-texto: #000000;
+  --color-correcto: #2ecc71;
+  --color-error: #ff4d4d;
+
+  /* Tipografías (placeholders) */
+  --font-script: "FuenteScript", "Brush Script MT", "Segoe Script", cursive;
+  --font-titulo: "FuenteTitulo", "Rockwell Extra Bold", "Rockwell", Georgia, serif;
+  --font-texto:  "FuenteTexto", "Arial", "Helvetica", sans-serif;
+  --font-boton:  "Hanley Pro Sans", "Arial", sans-serif;
+
+  /* Imagen de fondo opcional (textura pizarra), ej: url("../assets/img/fondo.jpg") */
+  --fondo-imagen: none;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #111;
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+body { display: flex; align-items: center; justify-content: center; }
+
+/* Escenario 9:16 que se adapta a la pantalla. 1cqw = 1% del ancho del escenario */
+#escenario {
+  position: relative;
+  width: min(100vw, 100vh * 9 / 16);
+  aspect-ratio: 9 / 16;
+  background: var(--color-fondo) var(--fondo-imagen) center / cover no-repeat;
+  color: var(--color-texto);
+  font-family: var(--font-texto);
+  overflow: hidden;
+  container-type: size;
+}
+
+/* ---------- Pantallas ---------- */
+.pantalla {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s ease;
+}
+.pantalla.activa { opacity: 1; pointer-events: auto; }
+
+.logo { width: 34cqw; margin-top: 5cqw; }
+
+/* ---------- Botón ---------- */
+.boton {
+  font-family: var(--font-boton);
+  font-weight: normal;
+  font-size: 6cqw;
+  line-height: 1;
+  letter-spacing: .03em;
+  color: var(--color-boton-texto);
+  background: var(--color-acento);
+  border: none;
+  border-radius: 999px;
+  padding: 3cqw 10cqw;
+  cursor: pointer;
+  transition: transform .12s ease;
+}
+.boton:active { transform: scale(.95); }
+
+/* Centrado vertical exacto: Hanley Pro Sans tiene un ascendente muy alto y
+   el texto quedaba bajo. Se recorta la caja de texto a la altura de las mayúsculas. */
+@supports (text-box: trim-both cap alphabetic) {
+  .boton { text-box: trim-both cap alphabetic; padding-block: 3.7cqw; }
+}
+@supports not (text-box: trim-both cap alphabetic) {
+  .boton { padding-top: calc(3cqw - .175em); padding-bottom: calc(3cqw + .175em); }
+}
+
+/* ---------- PANTALLA INICIO ---------- */
+#pantalla-inicio { background: url("../assets/img/fondo-inicio.webp") center top / cover no-repeat; }
+
+/* (usado en las pantallas finales) */
+.titulo-grande {
+  font-family: var(--font-titulo); font-weight: 900;
+  font-size: 22cqw; color: var(--color-acento);
+  letter-spacing: .02em; text-align: center; line-height: .95;
+}
+
+.inicio-pie {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 18cqw 0 7cqw;
+  display: flex; flex-direction: column; align-items: center; gap: 5cqw;
+  background: linear-gradient(to bottom, transparent, var(--color-fondo) 45%);
+  z-index: 3;
+}
+.instruccion { font-size: 3.6cqw; text-align: center; line-height: 1.35; }
+
+/* ---------- PANTALLA JUEGO ---------- */
+#pantalla-juego { background: url("../assets/img/fondo-juego.webp") center top / cover no-repeat; }
+
+/* Los valores se ubican dentro del marco dibujado en la imagen de fondo.
+   Coordenadas medidas sobre la imagen 1125×2000 (1 px ≈ 0.0889cqw). */
+.hud {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  color: var(--color-acento);
+  font-family: var(--font-boton);
+  font-size: 4.3cqw;
+  line-height: 1;
+}
+.hud-tiempo, .hud-aciertos {
+  position: absolute;
+  top: 30.2cqw;                 /* centro vertical del marco (y = 340 px) */
+  transform: translateY(-50%);
+  white-space: nowrap;
+  text-box: trim-both cap alphabetic;
+}
+.hud-tiempo   { left: 25cqw; font-variant-numeric: tabular-nums; }   /* a la derecha del ícono de reloj */
+.hud-aciertos { left: 48cqw; }                                      /* a la derecha de la lupa */
+.hud.urgente .hud-tiempo { color: var(--color-error); animation: latido .5s ease-in-out infinite alternate; }
+
+/* Zona libre entre la instrucción (y ≈ 445 px) y el pie (y ≈ 1900 px) */
+.cartas { position: absolute; left: 0; right: 0; top: 43cqw; height: 122cqw; }
+
+.carta {
+  position: absolute;
+  width: 60cqw; height: 60cqw;
+  border: .7cqw solid var(--color-texto);
+  border-radius: 50%;
+  transition: transform .3s ease, opacity .3s ease;
+}
+.carta-a { left: 6cqw;  top: 1cqw; }
+.carta-b { right: 6cqw; top: 59cqw; }
+.carta.saliendo { transform: scale(.6) rotate(-25deg); opacity: 0; }
+.carta.entrando { transform: scale(.6) rotate(25deg); opacity: 0; transition: none; }
+
+.simbolo {
+  position: absolute;
+  background: none; border: none; padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(var(--esc, 1));
+  transition: filter .15s ease;
+}
+.simbolo img { width: 100%; height: 100%; display: block; pointer-events: none; }
+.simbolo.seleccionado { filter: drop-shadow(0 0 1.5cqw var(--color-acento)) drop-shadow(0 0 .8cqw var(--color-acento)); animation: pop .3s ease; }
+.simbolo.correcto { filter: drop-shadow(0 0 2cqw var(--color-correcto)) drop-shadow(0 0 1cqw var(--color-correcto)); animation: pop .4s ease; }
+.simbolo.error { filter: drop-shadow(0 0 2cqw var(--color-error)); animation: sacudir .35s ease; }
+
+/* ---------- PANTALLA GANASTE ---------- */
+#pantalla-ganaste {
+  background: url("../assets/img/fondo-ganaste.webp") center top / cover no-repeat;
+  justify-content: flex-end;
+  padding-bottom: 8cqw;
+}
+/* Botón al 50% del tamaño normal */
+#pantalla-ganaste .boton,
+#pantalla-perdiste .boton { font-size: 3cqw; padding: 1.85cqw 5cqw; }
+
+/* ---------- PANTALLA PERDISTE ---------- */
+#pantalla-perdiste {
+  background: url("../assets/img/fondo-perdiste.webp") center top / cover no-repeat;
+  justify-content: flex-end;
+  padding-bottom: 8cqw;
+}
+/* Debajo de "PARA LA PRÓXIMA" (que termina en y ≈ 495 px de la imagen 1125×2000) */
+.perdiste-aciertos {
+  position: absolute; left: 0; right: 0;
+  top: 50cqw;
+  text-align: center;
+  font-family: var(--font-boton);
+  font-size: 5.5cqw;
+  letter-spacing: .02em;
+  color: var(--color-texto);
+}
+.final-aciertos { color: var(--color-acento); }
+
+/* ---------- Animaciones ---------- */
+@keyframes pop {
+  50% { transform: translate(-50%, -50%) rotate(var(--rot, 0deg)) scale(calc(var(--esc, 1) * 1.25)); }
+}
+@keyframes sacudir {
+  20%, 60% { transform: translate(-58%, -50%) rotate(var(--rot, 0deg)) scale(var(--esc, 1)); }
+  40%, 80% { transform: translate(-42%, -50%) rotate(var(--rot, 0deg)) scale(var(--esc, 1)); }
+}
+@keyframes latido { to { transform: scale(1.12); } }

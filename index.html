@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>¿Estás viendo doble? – La Crianza</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <!-- Escenario vertical 9:16. Todo se escala proporcionalmente al tamaño de la pantalla. -->
+  <main id="escenario">
+
+    <!-- ============ PANTALLA 1: INICIO ============ -->
+    <!-- Fondo (logo, título e imagen ya incluidos): assets/img/fondo-inicio.webp -->
+    <section id="pantalla-inicio" class="pantalla activa">
+      <div class="inicio-pie">
+        <p class="instruccion">Encuentra el símbolo que se repite<br>antes de que acabe el tiempo</p>
+        <button class="boton" id="btn-iniciar">INICIAR</button>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA 2: JUEGO ============ -->
+    <!-- Fondo (logo, marco del contador, íconos, instrucción y pie ya incluidos): assets/img/fondo-juego.webp
+         Aquí solo van los valores dinámicos y las cartas, posicionados sobre la imagen. -->
+    <section id="pantalla-juego" class="pantalla">
+      <div class="hud">
+        <span class="hud-tiempo" id="tiempo">1:00</span>
+        <span class="hud-aciertos"><span id="aciertos">0</span> DE <span id="meta">5</span> ACIERTOS</span>
+      </div>
+
+      <div class="cartas">
+        <div class="carta carta-a" id="carta-a"></div>
+        <div class="carta carta-b" id="carta-b"></div>
+      </div>
+    </section>
+
+    <!-- ============ PANTALLA 3: GANASTE ============ -->
+    <!-- Fondo (logo, título y texto ya incluidos): assets/img/fondo-ganaste.webp -->
+    <section id="pantalla-ganaste" class="pantalla">
+      <button class="boton btn-reiniciar">VOLVER AL INICIO</button>
+    </section>
+
+    <!-- ============ PANTALLA 4: PERDISTE ============ -->
+    <!-- Fondo (logo, "Más suerte para la próxima" e imagen ya incluidos): assets/img/fondo-perdiste.webp -->
+    <section id="pantalla-perdiste" class="pantalla">
+      <p class="perdiste-aciertos">LOGRASTE <span class="final-aciertos">0</span> DE <span class="final-meta">5</span> ACIERTOS</p>
+      <button class="boton btn-reiniciar">VOLVER AL INICIO</button>
+    </section>
+
+  </main>
+
+  <script src="js/juego.js"></script>
+</body>
+</html>
