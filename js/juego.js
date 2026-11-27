@@ -10,13 +10,18 @@ const CONFIG = {
   segundosUrgente: 10,     // el reloj se pone rojo bajo este valor
   retrasoTrasRespuesta: 700, // ms que se muestra el resultado (verde/rojo) antes de cambiar cartas
   penalizacionError: 0,    // segundos que se restan por par incorrecto (0 = sin castigo)
-  tamanoMin: 21,           // tamaño del símbolo más chico (% del diámetro de la carta)
-  tamanoMax: 29,           // tamaño del símbolo más grande
+  tamanoMin: 24,           // tamaño del símbolo más chico (% del diámetro de la carta)
+  tamanoMax: 32,           // tamaño del símbolo más grande
   variacionTamano: 1,      // variación aleatoria extra sobre cada tamaño
   volverAlInicio: 20,     // segundos en pantalla final antes de volver solo al inicio (0 = nunca)
 
+  // true  = usar las 31 cartas del juego físico (js/cartas-diseno.js): mismos símbolos,
+  //         posición, tamaño y rotación que el diseño impreso.
+  // false = cartas generadas al azar (tamanoMin / tamanoMax / variacionTamano se usan solo aquí).
+  usarCartasDiseno: true,
+
   // 31 símbolos. Para reemplazarlos, sobrescribe los archivos manteniendo el nombre.
-  rutaSimbolo: (n) => `assets/simbolos/simbolo-${String(n).padStart(2, '0')}.svg`,
+  rutaSimbolo: (n) => `assets/simbolos/simbolo-${String(n).padStart(2, '0')}.webp`,
 };
 
 /* ---------- Generación de cartas (plano proyectivo de orden 5) ----------
@@ -44,7 +49,10 @@ function generarCartas(n = 5) {
   return cartas;
 }
 
-const CARTAS = generarCartas();
+const USAR_DISENO = CONFIG.usarCartasDiseno && Array.isArray(window.CARTAS_DISENO);
+const CARTAS = USAR_DISENO
+  ? window.CARTAS_DISENO.map((carta) => carta.map((sim) => sim.s - 1))   // símbolos 0..30
+  : generarCartas();
 
 // Verificación (ver consola del navegador)
 (function verificar() {
@@ -104,41 +112,60 @@ function tamanosAleatorios() {
 }
 
 /* Ubica los símbolos en posiciones aleatorias dentro del círculo sin que se toquen.
-   Se colocan del más grande al más chico; si no caben, se achican un poco y se reintenta. */
+   Parte de posiciones al azar y los va "empujando": los que se tocan se separan y los que
+   se salen del círculo vuelven a entrar, hasta que todos caben. Aprovecha mucho mejor el
+   espacio que ubicarlos uno a uno, así que permite símbolos más grandes.
+   Si en varios intentos no caben, se achican un poco (rara vez ocurre). */
 function ubicarSimbolos(tamanos) {
-  const radioCarta = 46;         // margen interior respecto al borde (50 = borde)
-  const separacion = 1.5;
+  const radioCarta = 47.5;       // margen interior respecto al borde (50 = borde)
+  const separacion = 1.2;
+  const forma = 0.54;            // radio que ocupa una imagen respecto a su caja
   let escala = 1;
   for (let intento = 0; ; intento++) {           // siempre termina: la escala se reduce hasta que caben
-    const orden = tamanos.map((t, i) => ({ i, r: t * escala * 0.54 })) // 0.54 ≈ radio que ocupa una forma en su caja
-      .sort((a, b) => b.r - a.r);
-    const puestos = [];
-    let ok = true;
-    for (const s of orden) {
-      let ubicado = false;
-      for (let k = 0; k < 300 && !ubicado; k++) {
-        const ang = azar(0, Math.PI * 2);
-        const dist = Math.sqrt(Math.random()) * (radioCarta - s.r);
-        const x = 50 + dist * Math.cos(ang), y = 50 + dist * Math.sin(ang);
-        if (puestos.every((p) => Math.hypot(p.x - x, p.y - y) >= p.r + s.r + separacion)) {
-          puestos.push({ ...s, x, y });
-          ubicado = true;
+    const s = tamanos.map((t) => {
+      const r = t * escala * forma;
+      const ang = azar(0, Math.PI * 2), dist = Math.sqrt(Math.random()) * (radioCarta - r);
+      return { r, x: 50 + dist * Math.cos(ang), y: 50 + dist * Math.sin(ang) };
+    });
+    let ok = false;
+    for (let it = 0; it < 300 && !ok; it++) {
+      ok = true;
+      for (let i = 0; i < s.length; i++) for (let j = i + 1; j < s.length; j++) {
+        let dx = s[j].x - s[i].x, dy = s[j].y - s[i].y, d = Math.hypot(dx, dy);
+        const min = s[i].r + s[j].r + separacion;
+        if (d < min - 0.001) {
+          ok = false;
+          if (d < 0.001) { dx = azar(-1, 1); dy = azar(-1, 1); d = Math.hypot(dx, dy); }
+          const emp = (min - d) / 2 + 0.01;
+          s[i].x -= dx / d * emp; s[i].y -= dy / d * emp;
+          s[j].x += dx / d * emp; s[j].y += dy / d * emp;
         }
       }
-      if (!ubicado) { ok = false; break; }
+      for (const p of s) {
+        const dx = p.x - 50, dy = p.y - 50, d = Math.hypot(dx, dy), lim = radioCarta - p.r;
+        if (d > lim) { ok = false; p.x = 50 + dx / d * lim; p.y = 50 + dy / d * lim; }
+      }
     }
-    if (ok) return puestos.sort((a, b) => a.i - b.i).map((p) => ({ x: p.x, y: p.y, tam: p.r / 0.54 }));
-    if (intento % 5 === 4) escala *= 0.95;
+    if (ok) return s.map((p) => ({ x: p.x, y: p.y, tam: p.r / forma }));
+    if (intento % 4 === 3) escala *= 0.97;
   }
 }
 
-function dibujarCarta(contenedor, carta) {
+function dibujarCarta(contenedor, indice) {
   contenedor.innerHTML = '';
-  const simbolos = barajar(carta);
-  const posiciones = ubicarSimbolos(tamanosAleatorios());
+  let simbolos, posiciones;
+  if (USAR_DISENO) {
+    // Carta del juego físico: posición, tamaño y rotación exactos del diseño
+    const diseno = window.CARTAS_DISENO[indice];
+    simbolos = diseno.map((s) => s.s - 1);
+    posiciones = diseno.map(({ x, y, tam, rot }) => ({ x, y, tam, rot }));
+  } else {
+    simbolos = barajar(CARTAS[indice]);
+    posiciones = ubicarSimbolos(tamanosAleatorios()).map((p) => ({ ...p, rot: Math.round(azar(-180, 180)) }));
+  }
 
   simbolos.forEach((sim, i) => {
-    const { x, y, tam } = posiciones[i];
+    const { x, y, tam, rot } = posiciones[i];
     const btn = document.createElement('button');
     btn.className = 'simbolo';
     btn.dataset.simbolo = sim;
@@ -146,7 +173,7 @@ function dibujarCarta(contenedor, carta) {
     btn.style.top = `${y}%`;
     btn.style.width = `${tam}%`;
     btn.style.height = `${tam}%`;
-    btn.style.setProperty('--rot', `${azar(-180, 180).toFixed(0)}deg`);
+    btn.style.setProperty('--rot', `${rot}deg`);
     btn.innerHTML = `<img src="${CONFIG.rutaSimbolo(sim + 1)}" alt="" draggable="false">`;
     btn.addEventListener('pointerdown', (e) => { e.preventDefault(); tocarSimbolo(btn); });
     contenedor.appendChild(btn);
@@ -166,8 +193,8 @@ function nuevaRonda() {
   estado.cartaB = CARTAS[b];
 
   const elA = $('#carta-a'), elB = $('#carta-b');
-  dibujarCarta(elA, estado.cartaA);
-  dibujarCarta(elB, estado.cartaB);
+  dibujarCarta(elA, a);
+  dibujarCarta(elB, b);
   limpiarSeleccion();
 
   // pequeña animación de entrada

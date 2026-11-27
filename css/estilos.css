@@ -143,13 +143,14 @@ body { display: flex; align-items: center; justify-content: center; }
 
 .carta {
   position: absolute;
-  width: 60cqw; height: 60cqw;
-  border: .7cqw solid var(--color-texto);
+  width: 64cqw; height: 64cqw;
+  /* borde dibujado hacia adentro: así el 0–100 % de las posiciones del diseño es la carta completa */
+  box-shadow: inset 0 0 0 .7cqw var(--color-texto);
   border-radius: 50%;
   transition: transform .3s ease, opacity .3s ease;
 }
-.carta-a { left: 6cqw;  top: 1cqw; }
-.carta-b { right: 6cqw; top: 59cqw; }
+.carta-a { left: 3cqw;  top: 0; }
+.carta-b { right: 3cqw; top: 58cqw; }
 .carta.saliendo { transform: scale(.6) rotate(-25deg); opacity: 0; }
 .carta.entrando { transform: scale(.6) rotate(25deg); opacity: 0; transition: none; }
 
